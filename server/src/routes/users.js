@@ -1,0 +1,1 @@
+const router=require("express").Router();const c=require("../controllers/userController");const {authenticate,authorize}=require("../middleware/auth");router.get("/",authenticate,authorize("admin"),c.list);router.patch("/:id/role",authenticate,authorize("admin"),c.updateRole);module.exports=router;

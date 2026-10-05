@@ -1,0 +1,3 @@
+require("dotenv").config({path:require("path").join(__dirname,".env")});const createApp=require("./src/app");const migrate=require("./src/database/migrate");const {testConnection,close}=require("./src/config/database");const {connectRedis,closeRedis}=require("./src/config/redis");const app=createApp();const PORT=process.env.PORT||5000;
+(async()=>{try{await migrate();await testConnection();await connectRedis();app.listen(PORT,()=>console.log(`EduCMS API running on http://localhost:${PORT}`));}catch(error){console.error("Startup failed:",error);await closeRedis();await close();process.exit(1);}})();
+process.on("SIGTERM",async()=>{await closeRedis();await close();process.exit(0);});

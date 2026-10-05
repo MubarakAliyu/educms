@@ -1,0 +1,6 @@
+const {query}=require("../config/database");
+async function list(_req,res,next){try{const result=await query("SELECT * FROM tags ORDER BY name");res.json({tags:result.rows});}catch(e){next(e);}}
+async function create(req,res,next){try{const result=await query("INSERT INTO tags(name,slug,description) VALUES($1,$2,$3) RETURNING *",[req.body.name,req.body.slug,req.body.description||""]);res.status(201).json({tag:result.rows[0]});}catch(e){if(e.code==="23505")return res.status(409).json({message:"That tag already exists."});next(e);}}
+async function update(req,res,next){try{const result=await query("UPDATE tags SET name=$1,slug=$2,description=$3 WHERE tag_id=$4 RETURNING *",[req.body.name,req.body.slug,req.body.description||"",req.params.id]);if(!result.rows[0])return res.status(404).json({message:"Tag not found."});res.json({tag:result.rows[0]});}catch(e){if(e.code==="23505")return res.status(409).json({message:"That tag already exists."});next(e);}}
+async function remove(req,res,next){try{const result=await query("DELETE FROM tags WHERE tag_id=$1 RETURNING tag_id",[req.params.id]);if(!result.rows[0])return res.status(404).json({message:"Tag not found."});res.json({message:"Tag deleted."});}catch(e){next(e);}}
+module.exports={list,create,update,remove};

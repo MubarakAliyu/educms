@@ -1,0 +1,8 @@
+process.env.NODE_ENV="test";process.env.JWT_SECRET="test-secret";process.env.REDIS_ENABLED="false";process.env.FRONTEND_URL="http://localhost:5173";process.env.UPLOAD_DIR="./uploads";
+const request=require("supertest");const bcrypt=require("bcryptjs");const createApp=require("../src/app");const migrate=require("../src/database/migrate");const {query,close}=require("../src/config/database");
+const app=createApp();
+beforeAll(async()=>{await migrate();const hash=await bcrypt.hash("Admin123!",10);await query(`INSERT INTO users(username,email,password_hash,first_name,last_name,role,is_active,email_verified) VALUES('admin','admin@test.local',$1,'Edu','Admin','admin',TRUE,TRUE)`,[hash]);const cat=await query(`INSERT INTO categories(name,slug) VALUES('Programming','programming') RETURNING category_id`);await query(`INSERT INTO posts(title,slug,content,excerpt,author_id,category_id,status,published_at,is_featured) VALUES('Test Post','test-post','<p>Hello</p>','Hello',1,$1,'published',CURRENT_TIMESTAMP,TRUE)`,[cat.rows[0].category_id]);});
+afterAll(async()=>{await close();});
+test("health works",async()=>{const res=await request(app).get("/api/health");expect(res.status).toBe(200);expect(res.body.status).toBe("ok");});
+test("public posts list works",async()=>{const res=await request(app).get("/api/posts");expect(res.status).toBe(200);expect(res.body.posts.length).toBe(1);});
+test("login works and protected analytics works",async()=>{const agent=request.agent(app);const login=await agent.post("/api/auth/login").send({email:"admin@test.local",password:"Admin123!"});expect(login.status).toBe(200);const stats=await agent.get("/api/analytics/overview");expect(stats.status).toBe(200);expect(stats.body.stats.posts.published).toBe(1);});

@@ -1,0 +1,1 @@
+import React from "react";import Sidebar from "./Sidebar";export default function DashboardLayout({children}){return <div className="min-h-screen"><Sidebar/><div className="lg:ml-72"><div className="container-page py-8 lg:py-10">{children}</div></div></div>}

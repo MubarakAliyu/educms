@@ -1,0 +1,6 @@
+const fs=require("fs");
+const {query}=require("../config/database");
+async function list(_req,res,next){try{const result=await query(`SELECT m.*,CONCAT(COALESCE(u.first_name,''),' ',COALESCE(u.last_name,'')) AS uploader_name FROM media m LEFT JOIN users u ON u.user_id=m.uploaded_by ORDER BY m.created_at DESC`);res.json({media:result.rows});}catch(e){next(e);}}
+async function upload(req,res,next){try{if(!req.file)return res.status(400).json({message:"Please select a valid file."});const result=await query(`INSERT INTO media(filename,original_name,file_path,file_type,file_size,mime_type,uploaded_by,alt_text,caption) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *`,[req.file.filename,req.file.originalname,req.file.path,req.file.mimetype.split("/")[0],req.file.size,req.file.mimetype,req.user.user_id,req.body.altText||"",req.body.caption||""]);res.status(201).json({media:result.rows[0]});}catch(e){next(e);}}
+async function remove(req,res,next){try{const result=await query("DELETE FROM media WHERE media_id=$1 RETURNING file_path",[req.params.id]);if(!result.rows[0])return res.status(404).json({message:"Media not found."});try{fs.unlinkSync(result.rows[0].file_path);}catch{}res.json({message:"Media deleted."});}catch(e){next(e);}}
+module.exports={list,upload,remove};

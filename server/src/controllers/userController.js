@@ -1,0 +1,4 @@
+const {query}=require("../config/database");
+async function list(_req,res,next){try{const result=await query("SELECT user_id,username,email,first_name,last_name,role,is_active,email_verified,created_at,last_login FROM users ORDER BY created_at DESC");res.json({users:result.rows});}catch(e){next(e);}}
+async function updateRole(req,res,next){try{const roles=["admin","editor","author","subscriber"];if(!roles.includes(req.body.role))return res.status(400).json({message:"Invalid role."});const result=await query("UPDATE users SET role=$1,updated_at=CURRENT_TIMESTAMP WHERE user_id=$2 RETURNING user_id,email,role",[req.body.role,req.params.id]);if(!result.rows[0])return res.status(404).json({message:"User not found."});res.json({user:result.rows[0]});}catch(e){next(e);}}
+module.exports={list,updateRole};
